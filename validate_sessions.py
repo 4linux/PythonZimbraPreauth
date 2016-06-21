@@ -40,10 +40,14 @@ class Ldap:
     def list_restricted_users(self):
         # ldap filter
         ldap_filter = '(description=*)'
-        
-        # execute ldap search for all substrees in base and returning description and mail attributes
-	    res = self.connection.search_s(self.base,ldap.SCOPE_SUBTREE,ldap_filter,['description','mail'])
-		
+
+        # execute ldap search for all substrees in base and returnin
+        # description and mail attributes
+        res = self.connection.search_s(self.base,
+                                       ldap.SCOPE_SUBTREE,
+                                       ldap_filter,
+                                       ['description','mail'])
+
 	    locked_users = []
 	    active_users =  []
 
@@ -76,7 +80,7 @@ class Ldap:
 
                 # store the end time
 		        end_time = time_convert(int(end_hour),int(end_minute))
-                
+
                 # verify if current date and time is beetween access rule
 		        if not int(start_day) <= date.today().weekday() <= int(end_day) or \
                    not start_time <= datetime.now().time() <= end_time:
@@ -87,10 +91,10 @@ class Ldap:
                             active_users.append(email)
 
         # return tuple with 2 lists, the first with users to block access
-        # and the second with users to activate	
+        # and the second with users to activate
 	    return (locked_users, active_users)
 
-		
+
 
 def block_users():
     # This function execute zimbra commands to lock or active users in zimbra
@@ -101,20 +105,28 @@ def block_users():
     # lock users that are not in expedient
 	for u in locked:
 		account_status = "sudo /opt/zimbra/bin/zmprov ga %s zimbraAccountStatus"%(u)
-		status = subprocess.Popen([account_status],shell=True,stdout=subprocess.PIPE).communicate()[0]
+		status = subprocess.Popen([account_status],
+                                  shell=True,
+                                  stdout=subprocess.PIPE).communicate()[0]
 		if not "locked" in status:
 		    account_status = "sudo /opt/zimbra/bin/zmprov ma %s zimbraAccountStatus locked"%(u)
-		    status = subprocess.Popen([account_status],shell=True,stdout=subprocess.PIPE).communicate()[0]
+		    status = subprocess.Popen([account_status],
+                                      shell=True,
+                                      stdout=subprocess.PIPE).communicate()[0]
 
     # active users
 	for u in actives:
 		account_status = "sudo /opt/zimbra/bin/zmprov ga %s zimbraAccountStatus"%(u)
-		status = subprocess.Popen([account_status],shell=True,stdout=subprocess.PIPE).communicate()[0]
+		status = subprocess.Popen([account_status],
+                                  shell=True,
+                                  stdout=subprocess.PIPE).communicate()[0]
 		if not "active" in status:
 		    account_status = "sudo /opt/zimbra/bin/zmprov ma %s zimbraAccountStatus active"%(u)
-		    status = subprocess.Popen([account_status],shell=True,stdout=subprocess.PIPE).communicate()[0]
-		
-	
+		    status = subprocess.Popen([account_status],
+                                      shell=True,
+                                      stdout=subprocess.PIPE).communicate()[0]
+
+
 
 def get_allowed_users():
     # This functions return a list with email of users allowed in iptables
@@ -125,7 +137,9 @@ def get_allowed_users():
 	iptables_cmd = "sudo /sbin/iptables -L -n -t nat"
 
     # execute an iptables command
-	users_allowed = subprocess.Popen([iptables_cmd],shell=True,stdout=subprocess.PIPE).communicate()
+	users_allowed = subprocess.Popen([iptables_cmd],
+                                     shell=True,
+                                     stdout=subprocess.PIPE).communicate()
 
     # for each result the email is stored in a list
 	for u in users_allowed[0].split("\n"):
@@ -145,12 +159,14 @@ def get_active_users():
 
     # The command on bellow shows the users current logged in zimbra
 	get_sessions_cmd = "sudo /opt/zimbra/bin/zmsoap -z -t admin -v DumpSessionsRequest @groupByAccount=1 @listSessions=1"
-	logged_users = subprocess.Popen([get_sessions_cmd],shell=True,stdout=subprocess.PIPE).communicate()
-    
+	logged_users = subprocess.Popen([get_sessions_cmd],
+                                    shell=True,
+                                    stdout=subprocess.PIPE).communicate()
+
     # Parsing XML returned by zimbra
 	xml = logged_users[0].split("\n")
 	xml = "".join(xml[1:])
-	root = ElementTree.fromstring(xml)	
+	root = ElementTree.fromstring(xml)
 	for c in root:
 		for i in c:
 			users.append(i.attrib.get("name"))
@@ -162,33 +178,46 @@ def remove_not_actives(users):
 		for u in users:
             # Get iptables rules
 			iptables_cmd = "sudo /sbin/iptables -t nat -L -n --line-numbers | grep %s | awk '{print $1 }'"%u
-			remove_user = subprocess.Popen([iptables_cmd],shell=True,stdout=subprocess.PIPE).communicate()
+			remove_user = subprocess.Popen([iptables_cmd],
+                                            shell=True,
+                                            stdout=subprocess.PIPE) \
+                                            .communicate()
 
             # remove rules on iptables
 			for rule_line in remove_user[0].split("\n"):
 				if rule_line:
 					iptables_cmd = "sudo /sbin/iptables -t nat -D PREROUTING %s"%rule_line
-					remove_rule = subprocess.Popen([iptables_cmd],shell=True,stdout=subprocess.PIPE).communicate()
+					remove_rule = subprocess.Popen([iptables_cmd],
+                                                    shell=True,
+                                                    stdout=subprocess.PIPE) \
+                                                    .communicate()
 	else:
 		# Remove iptables rules for users out of expedient
 		iptables_cmd = "sudo /sbin/iptables -t nat -L -n --line-numbers | grep %s | awk '{print $1 }'"%users
-		remove_user = subprocess.Popen([iptables_cmd],shell=True,stdout=subprocess.PIPE).communicate()
+		remove_user = subprocess.Popen([iptables_cmd],
+                                        shell=True,
+                                        stdout=subprocess.PIPE).communicate()
 
         # run command for each result
 		for rule_line in remove_user[0].split("\n"):
 			if rule_line:
 				iptables_cmd = "sudo /sbin/iptables -t nat -D PREROUTING %s"%rule_line
-				remove_rule = subprocess.Popen([iptables_cmd],shell=True,stdout=subprocess.PIPE).communicate()
+				remove_rule = subprocess.Popen([iptables_cmd],
+                                                shell=True,
+                                                stdout=subprocess.PIPE) \
+                                                .communicate()
 
 
 def verify_zimbra(email):
     # this function verify status of a zimbra account
 	account_status = "sudo /opt/zimbra/bin/zmprov ga %s zimbraAccountStatus"%(email)
-	status = subprocess.Popen([account_status],shell=True,stdout=subprocess.PIPE).communicate()[0]
+	status = subprocess.Popen([account_status],
+                              shell=True,
+                              stdout=subprocess.PIPE).communicate()[0]
 	if "locked" in status:
 		remove_not_actives(email)
-		
-	
+
+
 
 try:
     # Main function
@@ -199,11 +228,11 @@ try:
 	actives = get_active_users()
 	print "Actives ",actives
 	remove = [ user for user in alloweds if user not in actives ]
-    # Remove users that are in expedient but are not logged in 
+    # Remove users that are in expedient but are not logged in
     # and has an iptables rule
 	remove_not_actives(remove)
 	for a in alloweds:
 		verify_zimbra(a)
-		
+
 except Exception as e:
 	print "Erro: ",e

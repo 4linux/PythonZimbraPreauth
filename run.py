@@ -39,7 +39,7 @@ class Iptables:
 			print "Error: ",e
 			return False
 
-		
+
 
 class ZimbraAuth:
     def __init__(self):
@@ -56,7 +56,7 @@ class ZimbraAuth:
 		string = "%s|%s|%s|%s"%(account,by,expires,timestamp)
 
         # Genereate hash for zimbra preauth
-		pre = hmac.new(self.preauth_key,string,sha1).hexdigest()		
+		pre = hmac.new(self.preauth_key,string,sha1).hexdigest()
 
 		return "https://%s/service/preauth?account=%s&expires=%s&timestamp=%s&preauth=%s"%(self.domain,account,expires,timestamp,pre)
 
@@ -73,7 +73,9 @@ class Ldap:
             self.connection = ldap.initialize("ldap://%s"%self.address)
             self.connection.protocol_version = ldap.VERSION3
             ldap_filter = '(mail=%s)'%self.user
-            dn = self.connection.search_s(self.base,ldap.SCOPE_SUBTREE,ldap_filter)[0][0]
+            dn = self.connection.search_s(self.base,
+										  ldap.SCOPE_SUBTREE,
+										  ldap_filter)[0][0]
             self.connection.bind_s(dn,self.password)
         except Exception as e:
             print "Error: ",e
@@ -84,12 +86,17 @@ class Ldap:
 
     def search_user(self,email,remote_addr):
 		ldap_filter = '(&(mail=%s)(description=*))'%email
-		res = self.connection.search_s(self.base,ldap.SCOPE_SUBTREE,ldap_filter,['description'])
+		res = self.connection.search_s(self.base,
+									   ldap.SCOPE_SUBTREE,
+									   ldap_filter,
+									   ['description'])
 		print res
 		if res:
 			account_status = "sudo /opt/zimbra/bin/zmprov ga %s zimbraAccountStatus"%(email)
 			print account_status
-			status = subprocess.Popen([account_status],shell=True,stdout=subprocess.PIPE).communicate()[0]
+			status = subprocess.Popen([account_status],
+									  shell=True,
+									  stdout=subprocess.PIPE).communicate()[0]
 			print status
 			if "locked" in status:
 				return "Usu&aacute;rio fora do expediente permitido!"

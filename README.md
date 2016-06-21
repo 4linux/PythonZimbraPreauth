@@ -7,7 +7,7 @@ The management is made using IPTables rules and OpenLdap.
 If a user wants to access the Zimbra Webmail, he needs to have a ldap attribute called *description*, with weekday and hour to access the webmail.
 
 This attribute description, needs to follow the example on below:
-0-4:1800:2200
+0-4:18.00:22.00
 
 Explaining this.
 
@@ -22,13 +22,13 @@ The days of week is defined by the following numbers:
 * 5 - Saturday
 * 6 - Sunday
 
-Second part is the start hour, and the last is the end hour. 
+Second part is the start hour, and the last is the end hour.
 
 For example:
 
 A user can access between 9 am to 6 pm, the rule need to be in the follows format:
 
- 0900:1800
+ 09.00:18.00
 
 If the current date and current hour match with the rule in the attribute description of user in ldap, the aplication will add an iptables rule granting the access and the user will be redirected to Zimbra using preauth method.
 
@@ -49,7 +49,7 @@ adduser devops
 
 Give to user a sudo permission with no passwd:
 
-visudo 
+visudo
 devops ALL=(ALL) ALL:NOPASSWD
 
 Add a line in crontab to validate sessions
@@ -64,9 +64,3 @@ iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 5443
 # Run Application
 
 python run.py
-
-
-
- 
-
-
