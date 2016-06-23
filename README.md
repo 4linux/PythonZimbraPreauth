@@ -50,15 +50,18 @@ adduser devops
 Give to user a sudo permission with no passwd:
 
 visudo
+
 devops ALL=(ALL) ALL:NOPASSWD
 
 Add a line in crontab to validate sessions
 
 crontab -e
+
 */5 * * * * /srv/WebmailBlock/validade_sessions.py > /dev/null 2>&1
 
 Rules to block access:
 iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 5000
+
 iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 5443
 
 # Run Application
